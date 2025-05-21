@@ -1,31 +1,28 @@
-import os
-import hashlib
-import platform
+  import os
+  import hashlib
+  import platform
 
-class misc:
+  class misc:
 
-    @staticmethod
-    def get_hwid():
-        try:
-            if platform.system().lower() == "windows":
-                # استخدم اسم المستخدم كـ HWID بديل بسيط
-                return os.getlogin()
-            else:
-                # في لينكس أو Vercel: نستخدم machine-id
-                with open("/etc/machine-id", "r") as f:
-                    return f.read().strip()
-        except:
-            return "unknown-hwid"
+      @staticmethod
+      def get_hwid():
+          if platform.system() == "Windows":
+              return os.getenv("COMPUTERNAME")
+          else:
+              try:
+                  with open("/etc/machine-id", "r") as f:
+                      return f.read().strip()
+              except FileNotFoundError:
+                  return "unknown-hwid"
 
-    @staticmethod
-    def get_checksum():
-        try:
-            path = os.path.abspath(__file__)
-            if not os.path.exists(path):
-                return "checksum-error"
+      @staticmethod
+      def get_checksum():
+          path = os.path.abspath(__file__)
+          if not os.path.exists(path):
+              return "unknown-checksum"
 
-            with open(path, "rb") as f:
-                content = f.read()
-                return hashlib.md5(content).hexdigest()
-        except:
-            return "checksum-error"
+          md5_hash = hashlib.md5()
+          with open(path, "rb") as a_file:
+              content = a_file.read()
+              md5_hash.update(content)
+          return md5_hash.hexdigest()
