@@ -1,33 +1,31 @@
 import os
 import hashlib
 import platform
-import win32security
 
 class misc:
 
     @staticmethod
     def get_hwid():
-        winuser = os.getlogin()
-        if platform.system() != "Windows":
-            with open("/etc/machine-id") as f:
-                hwid = f.read()
-                return hwid
+        try:
+            if platform.system().lower() == "windows":
+                # استخدم اسم المستخدم كـ HWID بديل بسيط
+                return os.getlogin()
+            else:
+                # في لينكس أو Vercel: نستخدم machine-id
+                with open("/etc/machine-id", "r") as f:
+                    return f.read().strip()
+        except:
+            return "unknown-hwid"
 
-        sid = win32security.LookupAccountName(None, winuser)[0]
-        sidstr = win32security.ConvertSidToStringSid(sid)
-
-        return sidstr
-    
     @staticmethod
     def get_checksum():
-        path = os.path.basename(__file__)
-        if not os.path.exists(path):
-            path = path[:-2] + "exe"
-            
-        md5_hash = hashlib.md5()
-        a_file = open(path, "rb")
-        content = a_file.read()
-        md5_hash.update(content)
-        digest = md5_hash.hexdigest()
-        
-        return digest
+        try:
+            path = os.path.abspath(__file__)
+            if not os.path.exists(path):
+                return "checksum-error"
+
+            with open(path, "rb") as f:
+                content = f.read()
+                return hashlib.md5(content).hexdigest()
+        except:
+            return "checksum-error"
