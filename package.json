@@ -1,6 +1,4 @@
 {
-  "name": "keyauth-api",
-  "version": "1.0.0",
   "type": "module",
   "dependencies": {
     "@keyauth/keyauth-ts": "^1.3.0",
