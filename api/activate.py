@@ -64,20 +64,21 @@ async def activate_license(data: LicenseRequest):
         else:
             rem_str = "Expired"
 
-        msg = f"""🔐 License Activated
+        msg = f"""🔐 *License Activated*
 
-📅 Activation Time:
-   ├ 🕒 Local: {local_time}
-   └ 🌐 UTC: {utc_time}
+📅 *Activation Time:*
+├ 🕒 *Local:* `{local_time}`
+└ 🌐 *UTC:* `{utc_time}`
 
-👤 PC Name: {pc_name}
-🖥️ HWID: {hwid}
-💻 OS: {os_info}
-📍 IP: {ip}
-🆔 License: {license_key}
-🕒 Expiry: {expiry} (Local Time)
-⌛️ Remaining: {rem_str}
+👤 *PC Name:* `{pc_name}`
+🖥️ *HWID:* `{hwid}`
+💻 *OS:* `{os_info}`
+📍 *IP:* `{ip}`
+🆔 *License:* `{license_key}`
+🕒 *Expiry:* `{expiry}`
+⌛ *Remaining:* `{rem_str}`
 """
+
 
         send_telegram(msg)
         send_discord(msg)
