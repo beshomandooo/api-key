@@ -1,4 +1,4 @@
-import { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { KeyAuth } from "keyauth/keyauth.ts";
 import os from 'os'
 import crypto from 'crypto'
