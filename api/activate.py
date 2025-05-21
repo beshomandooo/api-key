@@ -24,7 +24,11 @@ def send_telegram(msg):
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
         data = {"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}
         res = requests.post(url, data=data)
-        print("[Telegram]", res.status_code, res.text)
+
+        # Debug - طباعة نتيجة الطلب
+        print("[Telegram] Status:", res.status_code)
+        print("[Telegram] Response:", res.text)
+
     except Exception as e:
         print(f"[Telegram Error]: {e}")
 
