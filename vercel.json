@@ -1,15 +1,8 @@
-
 {
-  "builds": [
-    {
-      "src": "api/activate.py",
-      "use": "@vercel/python"
+  "functions": {
+    "api/license.ts": {
+      "runtime": "vercel-node@latest"
     }
-  ],
-  "routes": [
-    {
-      "src": "/api/activate",
-      "dest": "api/activate.py"
-    }
-  ]
+  }
 }
+
