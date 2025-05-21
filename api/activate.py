@@ -34,7 +34,7 @@ def send_discord(msg):
     except:
         pass
 
-@app.post("/")
+@app.post("/api/activate")
 async def activate_license(data: LicenseRequest):
     try:
         keyauthapp = Keyauth(name, owner_id, secret, version, "dummyhash")
