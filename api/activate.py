@@ -22,7 +22,12 @@ class LicenseRequest(BaseModel):
 def send_telegram(msg):
     try:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        data = {"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}
+        data = {
+    "chat_id": CHAT_ID,
+    "text": msg,
+    "parse_mode": "Markdown"
+}
+
         res = requests.post(url, data=data)
 
         # Debug - طباعة نتيجة الطلب
