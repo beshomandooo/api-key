@@ -23,9 +23,10 @@ def send_telegram(msg):
     try:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
         data = {"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}
-        requests.post(url, data=data)
-    except:
-        pass
+        res = requests.post(url, data=data)
+        print("[Telegram]", res.status_code, res.text)
+    except Exception as e:
+        print(f"[Telegram Error]: {e}")
 
 def send_discord(msg):
     try:
