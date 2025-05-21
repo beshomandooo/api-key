@@ -46,13 +46,14 @@ async def activate_license(data: LicenseRequest):
         activation_local = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
         activation_utc = datetime.now(timezone.utc).strftime('%Y-%m-%d %I:%M:%S %p')
 
-        # 🟡 استخراج وقت انتهاء الاشتراك وتحويله لتاريخ
-        expiry_unix = int(user.expires)
-        expiry_time = datetime.fromtimestamp(expiry_unix, tz=timezone.utc)
+        # ✅ تحويل تاريخ الانتهاء من نص إلى datetime
+        expiry_str_raw = user.expires  # مثل: "2025-12-31"
+        expiry_time = datetime.strptime(expiry_str_raw, "%Y-%m-%d").replace(tzinfo=timezone.utc)
         expiry_str = expiry_time.strftime('%Y-%m-%d %I:%M:%S %p (UTC)')
 
-        # 🟠 حساب الوقت المتبقي
-        remaining = expiry_time - datetime.now(timezone.utc)
+        # ⏳ حساب الوقت المتبقي
+        now_utc = datetime.now(timezone.utc)
+        remaining = expiry_time - now_utc
         days = remaining.days
         hours = remaining.seconds // 3600
         minutes = (remaining.seconds % 3600) // 60
@@ -70,7 +71,6 @@ async def activate_license(data: LicenseRequest):
    ├ 📆 Expiry Date: {expiry_str}
    └ ⏳ Remaining: {remaining_str}
 """
-
         send_telegram(msg)
         send_discord(msg)
 
