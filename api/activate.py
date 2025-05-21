@@ -42,9 +42,21 @@ async def activate_license(data: LicenseRequest):
 
         user = keyauthapp.user
         pc_name = platform.node()
-        raw_expiry = getattr(user, "expires", None)
+
         activation_local = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
         activation_utc = datetime.now(timezone.utc).strftime('%Y-%m-%d %I:%M:%S %p')
+
+        # 🟡 استخراج وقت انتهاء الاشتراك وتحويله لتاريخ
+        expiry_unix = int(user.expires)
+        expiry_time = datetime.fromtimestamp(expiry_unix, tz=timezone.utc)
+        expiry_str = expiry_time.strftime('%Y-%m-%d %I:%M:%S %p (UTC)')
+
+        # 🟠 حساب الوقت المتبقي
+        remaining = expiry_time - datetime.now(timezone.utc)
+        days = remaining.days
+        hours = remaining.seconds // 3600
+        minutes = (remaining.seconds % 3600) // 60
+        remaining_str = f"{days} يوم، {hours} ساعة، {minutes} دقيقة"
 
         msg = f"""🔐 **[License Activated]**
 
@@ -52,10 +64,13 @@ async def activate_license(data: LicenseRequest):
    ├ 🕒 Local: {activation_local}
    └ 🌐 UTC: {activation_utc}
 
-👤 **PC Name:** `{pc_name}`
-🆔 **License:** `{data.license_key}`
-🕒 **Expiry:** {raw_expiry}
+🧾 **License Info:**
+   ├ 🆔 Key: `{data.license_key}`
+   ├ 🖥️ PC Name: `{pc_name}`
+   ├ 📆 Expiry Date: {expiry_str}
+   └ ⏳ Remaining: {remaining_str}
 """
+
         send_telegram(msg)
         send_discord(msg)
 
