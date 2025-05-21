@@ -1,9 +1,6 @@
 {
-  "name": "keyauth-api",
-  "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "axios": "^1.6.0",
-    "keyauth-ts": "github:keyauth/keyauth-ts"
+    "axios": "^1.6.0"
   }
 }
