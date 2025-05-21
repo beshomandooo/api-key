@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { KeyAuth } from "lib/keyauth"; // ✅ عدّله على حسب مكان الملف فعليًا
+import { KeyAuth } from "keyauth/ky"; // ✅ عدّله على حسب مكان الملف فعليًا
 
 import os from 'os'
 import crypto from 'crypto'
