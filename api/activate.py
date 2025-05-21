@@ -43,33 +43,44 @@ async def activate_license(data: LicenseRequest):
         user = keyauthapp.user
         pc_name = platform.node()
 
-        activation_local = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
-        activation_utc = datetime.now(timezone.utc).strftime('%Y-%m-%d %I:%M:%S %p')
+        # ✅ الوقت الحالي
+        activation_local_dt = datetime.now()
+        activation_local = activation_local_dt.strftime('%Y-%m-%d %I:%M:%S %p (Local Time)')
+        activation_utc = activation_local_dt.astimezone(timezone.utc).strftime('%Y-%m-%d %I:%M:%S %p (UTC)')
 
-        # ✅ تحويل تاريخ الانتهاء من نص إلى datetime
-        expiry_str_raw = user.expires  # مثل: "2025-12-31"
-        expiry_time = datetime.strptime(expiry_str_raw, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-        expiry_str = expiry_time.strftime('%Y-%m-%d %I:%M:%S %p (UTC)')
+        # ✅ تحويل تاريخ الانتهاء إلى datetime محلي
+        expiry_str_raw = user.expires  # مثال: "2025-05-20 20:39:50"
+        try:
+            expiry_dt = datetime.strptime(expiry_str_raw, "%Y-%m-%d %H:%M:%S")
+        except:
+            expiry_dt = datetime.strptime(expiry_str_raw, "%Y-%m-%d")
 
-        # ⏳ حساب الوقت المتبقي
-        now_utc = datetime.now(timezone.utc)
-        remaining = expiry_time - now_utc
-        days = remaining.days
-        hours = remaining.seconds // 3600
-        minutes = (remaining.seconds % 3600) // 60
-        remaining_str = f"{days} يوم، {hours} ساعة، {minutes} دقيقة"
+        expiry_local = expiry_dt.strftime('%Y-%m-%d %I:%M:%S %p (Local Time)')
 
-        msg = f"""🔐 **[License Activated]**
+        # ✅ حساب الوقت المتبقي بدقة
+        remaining = expiry_dt - activation_local_dt
+        total_seconds = int(remaining.total_seconds())
+        if total_seconds <= 0:
+            remaining_str = "Expired"
+        elif total_seconds < 60:
+            remaining_str = f"Ends in {total_seconds} seconds"
+        elif total_seconds < 3600:
+            minutes = total_seconds // 60
+            remaining_str = f"Ends in {minutes} minutes"
+        else:
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            remaining_str = f"Ends in {hours} hour(s) and {minutes} minute(s)"
 
-📅 **Activation Time:**
+        msg = f"""🔐 License Activated
+
+📅 Activation Time:
    ├ 🕒 Local: {activation_local}
    └ 🌐 UTC: {activation_utc}
 
-🧾 **License Info:**
-   ├ 🆔 Key: `{data.license_key}`
-   ├ 🖥️ PC Name: `{pc_name}`
-   ├ 📆 Expiry Date: {expiry_str}
-   └ ⏳ Remaining: {remaining_str}
+🆔 License: {data.license_key}
+🕒 Expiry: {expiry_local}
+⌛️ Remaining: {remaining_str}
 """
         send_telegram(msg)
         send_discord(msg)
