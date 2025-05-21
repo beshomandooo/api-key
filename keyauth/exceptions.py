@@ -1,0 +1,3 @@
+
+class KeyauthError(Exception):
+    pass

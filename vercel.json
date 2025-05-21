@@ -1,0 +1,15 @@
+
+{
+  "builds": [
+    {
+      "src": "api/activate.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/activate",
+      "dest": "api/activate.py"
+    }
+  ]
+}
