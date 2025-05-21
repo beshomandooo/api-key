@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
-import { KeyAuth } from '@keyauth/keyauth-ts'
+import { KeyAuth } from "keyauth-ts";
 import os from 'os'
 import crypto from 'crypto'
 import axios from 'axios'
