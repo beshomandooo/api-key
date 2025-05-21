@@ -42,20 +42,38 @@ async def activate_license(data: LicenseRequest):
 
         user = keyauthapp.user
         pc_name = platform.node()
-        raw_expiry = getattr(user, "expires", None)
-        activation_local = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
-        activation_utc = datetime.now(timezone.utc).strftime('%Y-%m-%d %I:%M:%S %p')
+        hwid = getattr(user, "hwid", "N/A")
+        os_info = f"{platform.system()} {platform.release()}"
+        ip = getattr(user, "ip", "Unknown")
+        license_key = getattr(user, "username", data.license_key)
+        expiry = getattr(user, "expires", "N/A")
 
-        msg = f"""🔐 **[License Activated]**
+        local_time = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p (Local Time)')
+        utc_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %I:%M:%S %p (UTC)')
 
-📅 **Activation Time:**
-   ├ 🕒 Local: {activation_local}
-   └ 🌐 UTC: {activation_utc}
+        expiry_dt = datetime.strptime(expiry, "%Y-%m-%d")
+        now = datetime.now()
+        remaining = expiry_dt - now
+        if remaining.total_seconds() > 0:
+            rem_str = f"Ends in {remaining.days} days"
+        else:
+            rem_str = "Expired"
 
-👤 **PC Name:** `{pc_name}`
-🆔 **License:** `{data.license_key}`
-🕒 **Expiry:** {raw_expiry}
+        msg = f"""🔐 License Activated
+
+📅 Activation Time:
+   ├ 🕒 Local: {local_time}
+   └ 🌐 UTC: {utc_time}
+
+👤 PC Name: {pc_name}
+🖥️ HWID: {hwid}
+💻 OS: {os_info}
+📍 IP: {ip}
+🆔 License: {license_key}
+🕒 Expiry: {expiry} (Local Time)
+⌛️ Remaining: {rem_str}
 """
+
         send_telegram(msg)
         send_discord(msg)
 
