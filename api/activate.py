@@ -1,13 +1,12 @@
-
 from fastapi import FastAPI
 from pydantic import BaseModel
 from keyauth.api import Keyauth, KeyauthError
-import platform
 from datetime import datetime, timezone
 import requests
 
 app = FastAPI()
 
+# إعدادات KeyAuth
 name = "123"
 owner_id = "hKsGVXgQWd"
 secret = "caf9850754119109448034765052eae71bac6d7f791e60e3b1c3aeb487ce1fb3"
@@ -16,27 +15,24 @@ BOT_TOKEN = "7599892515:AAFx6GXQJKL9pZDYXttyCFszxFFbUkNE5TA"
 CHAT_ID = "7946491186"
 DISCORD_WEBHOOK = "https://discord.com/api/webhooks/xxxxxxxxx/xxxxxxxxx"
 
+# ✅ البيانات المطلوبة من جهاز المستخدم
 class LicenseRequest(BaseModel):
     license_key: str
+    pc_name: str
+    hwid: str
+    os_info: str
+    ip: str
 
+# إرسال لتليجرام
 def send_telegram(msg):
     try:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        data = {
-    "chat_id": CHAT_ID,
-    "text": msg,
-    "parse_mode": "Markdown"
-}
-
+        data = {"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}
         res = requests.post(url, data=data)
+    except:
+        pass
 
-        # Debug - طباعة نتيجة الطلب
-        print("[Telegram] Status:", res.status_code)
-        print("[Telegram] Response:", res.text)
-
-    except Exception as e:
-        print(f"[Telegram Error]: {e}")
-
+# إرسال لديسكورد
 def send_discord(msg):
     try:
         data = {"content": msg}
@@ -50,41 +46,31 @@ async def activate_license(data: LicenseRequest):
         keyauthapp = Keyauth(name, owner_id, secret, version, "dummyhash")
         keyauthapp.license(data.license_key)
 
-        user = keyauthapp.user
-        pc_name = platform.node()
-        hwid = getattr(user, "hwid", "N/A")
-        os_info = f"{platform.system()} {platform.release()}"
-        ip = getattr(user, "ip", "Unknown")
-        license_key = getattr(user, "username", data.license_key)
-        expiry = getattr(user, "expires", "N/A")
-
+        license_key = data.license_key
+        expiry = keyauthapp.user.expires
         local_time = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p (Local Time)')
         utc_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %I:%M:%S %p (UTC)')
 
         expiry_dt = datetime.strptime(expiry, "%Y-%m-%d")
         now = datetime.now()
         remaining = expiry_dt - now
-        if remaining.total_seconds() > 0:
-            rem_str = f"Ends in {remaining.days} days"
-        else:
-            rem_str = "Expired"
+        rem_str = f"Ends in {remaining.days} days" if remaining.total_seconds() > 0 else "Expired"
 
+        # ✅ الرسالة المرتبة بتنسيق Markdown
         msg = f"""🔐 *License Activated*
 
 📅 *Activation Time:*
 ├ 🕒 *Local:* `{local_time}`
 └ 🌐 *UTC:* `{utc_time}`
 
-👤 *PC Name:* `{pc_name}`
-🖥️ *HWID:* `{hwid}`
-💻 *OS:* `{os_info}`
-📍 *IP:* `{ip}`
+👤 *PC Name:* `{data.pc_name}`
+🖥️ *HWID:* `{data.hwid}`
+💻 *OS:* `{data.os_info}`
+📍 *IP:* `{data.ip}`
 🆔 *License:* `{license_key}`
 🕒 *Expiry:* `{expiry}`
 ⌛ *Remaining:* `{rem_str}`
 """
-
-
         send_telegram(msg)
         send_discord(msg)
 
