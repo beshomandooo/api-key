@@ -1,11 +1,13 @@
 from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
 from keyauth.api import Keyauth, KeyauthError
+import os
 import platform
 import hashlib
 import requests
 from datetime import datetime, timezone
 
+# إعداد Vercel API
 app = FastAPI()
 
 # KeyAuth Settings
@@ -14,54 +16,57 @@ owner_id = "hKsGVXgQWd"
 secret = "caf9850754119109448034765052eae71bac6d7f791e60e3b1c3aeb487ce1fb3"
 version = "1.0"
 
-# Telegram & Discord
+# Telegram
 BOT_TOKEN = "7599892515:AAFx6GXQJKL9pZDYXttyCFszxFFbUkNE5TA"
 CHAT_ID = "7946491186"
+
+# Discord
 DISCORD_WEBHOOK = "https://discord.com/api/webhooks/xxxxxxxxx/xxxxxxxxx"
 
-# Checksum
-
 def getchecksum():
-    return hashlib.sha256(open(__file__, 'rb').read()).hexdigest()
+    with open(os.path.abspath(__file__), 'rb') as f:
+        return hashlib.sha256(f.read()).hexdigest()
 
-# Send notifications
-
-def send_telegram(msg):
+def send_telegram(message):
     try:
-        requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"})
-    except: pass
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        data = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"}
+        requests.post(url, data=data)
+    except:
+        pass
 
-def send_discord(msg):
+def send_discord(message):
     try:
-        requests.post(DISCORD_WEBHOOK, data={"content": msg})
-    except: pass
-
-# Format expiry & time left
+        requests.post(DISCORD_WEBHOOK, data={"content": message})
+    except:
+        pass
 
 def format_expiry(unix_timestamp):
     try:
         return datetime.fromtimestamp(int(unix_timestamp)).strftime('%Y-%m-%d %I:%M:%S %p (Local Time)')
-    except: return "Unknown"
+    except:
+        return "Unknown"
 
 def get_time_left(unix_timestamp):
     try:
-        expiry = datetime.fromtimestamp(int(unix_timestamp), tz=timezone.utc)
+        expiry_dt = datetime.fromtimestamp(int(unix_timestamp), tz=timezone.utc)
         now = datetime.now(timezone.utc)
-        delta = expiry - now
-        if delta.total_seconds() <= 0: return "Expired"
+        delta = expiry_dt - now
+        if delta.total_seconds() <= 0:
+            return "Expired"
         days = delta.days
-        hours, rem = divmod(delta.seconds, 3600)
-        minutes, _ = divmod(rem, 60)
-        return f"Ends in {days}d {hours}h {minutes}m"
-    except: return "N/A"
+        hours, remainder = divmod(delta.seconds, 3600)
+        minutes, _ = divmod(remainder, 60)
+        parts = []
+        if days > 0: parts.append(f"{days} days")
+        if hours > 0: parts.append(f"{hours} hours")
+        if minutes > 0: parts.append(f"{minutes} minutes")
+        return "Ends in " + " and ".join(parts)
+    except:
+        return "Not available"
 
-# Request model
 class LicenseData(BaseModel):
     license_key: str
-    hwid: str
-    pc_name: str
-    os: str
-    mac: str
 
 @app.post("/api/activate")
 async def activate_license(data: LicenseData, request: Request):
@@ -70,29 +75,32 @@ async def activate_license(data: LicenseData, request: Request):
         keyauthapp.license(data.license_key)
 
         user = keyauthapp.user
+        pc_name = "Unknown"
+        hwid = getattr(user, "hwid", "Unknown")
         user_ip = request.client.host or "Unknown"
         user_key = getattr(user, "username", data.license_key)
         raw_expiry = getattr(user, "expires", None)
         user_expiry = format_expiry(raw_expiry) if raw_expiry else "Unknown"
-        remaining = get_time_left(raw_expiry) if raw_expiry else "N/A"
+        user_remaining = get_time_left(raw_expiry) if raw_expiry else "N/A"
+        os_info = f"{platform.system()} {platform.release()}"
 
-        local_time = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
-        utc_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %I:%M:%S %p (UTC)')
+        # توقيت التفعيل
+        activation_local = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p (Local Time)')
+        activation_utc = datetime.now(timezone.utc).strftime('%Y-%m-%d %I:%M:%S %p (UTC)')
 
         msg = f"""🔐 **[License Activated]**
 
 📅 **Activation Time:**
-├ 🕒 Local: {local_time}
-└ 🌐 UTC: {utc_time}
+   ├ 🕒 Local: {activation_local}
+   └ 🌐 UTC: {activation_utc}
 
-👤 **PC Name:** `{data.pc_name}`
-🖥️ **HWID:** `{data.hwid}`
-💻 **OS:** {data.os}
-🔌 **MAC:** `{data.mac}`
+👤 **PC Name:** `{pc_name}`
+🖥️ **HWID:** `{hwid}`
+💻 **OS:** {os_info}
 📍 **IP:** {user_ip}
 🆔 **License:** `{user_key}`
 🕒 **Expiry:** {user_expiry}
-⌛ **Remaining:** {remaining}
+⌛ **Remaining:** {user_remaining}
 """
 
         send_telegram(msg)
@@ -101,18 +109,14 @@ async def activate_license(data: LicenseData, request: Request):
         return {
             "status": "success",
             "message": "License activated",
-            "data": {
+            "details": {
                 "license": user_key,
-                "expiry": user_expiry,
-                "remaining": remaining,
                 "ip": user_ip,
-                "hwid": data.hwid,
-                "pc_name": data.pc_name,
-                "os": data.os,
-                "mac": data.mac
+                "hwid": hwid,
+                "expiry": user_expiry,
+                "remaining": user_remaining
             }
         }
-
     except KeyauthError as e:
         raise HTTPException(status_code=401, detail=f"❌ Activation failed: {str(e)}")
     except Exception as e:
